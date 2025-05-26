@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiConnect - Личный кабинет</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --secondary: #4cc9f0;   
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4bb543;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            font-size: 24px;
+            color: var(--secondary);
+        }
+        
+        .burger-menu {
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .main-content {
+            padding: 20px 15px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+            margin: 25px 0 15px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 24px;
+            color: var(--accent);
+        }
+        
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 15px;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-danger {
+            background: var(--accent);
+            box-shadow: 0 6px 15px rgba(247, 37, 133, 0.3);
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .order-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .card-text {
+            color: var(--gray);
+            line-height: 1.6;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .order-map, #map {
+            height: 250px;
+            width: 100%;
+            border-radius: 10px;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            z-index: 0;
+        }
+        
+        .leaflet-container {
+            background: #fff !important;
+        }
+        
+        .order-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .order-detail {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-in_progress {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-completed {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 10000;
+        }
+        
+        .flash {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: white;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .flash-success {
+            background-color: var(--success);
+        }
+        
+        .flash-error {
+            background-color: var(--accent);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            animation: modalSlideUp 0.4s ease forwards;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.3s;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .route-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .route-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .route-info-label {
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .route-info-value {
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        /* Нижняя навигация */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 3px;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .nav-item.active::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes modalSlideUp {
+            to { transform: translateY(0); }
+        }
+
+
+         
+        /* Боковое меню */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 2000;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .sidebar-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            letter-spacing: 0.5px;
+        }
+        
+        .close-sidebar {
+            font-size: 22px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: var(--gray-light);
+        }
+        
+        .close-sidebar:hover {
+            transform: rotate(90deg);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: transparent;
+            border-radius: 12px;
+            color: var(--dark);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item i {
+            margin-right: 15px;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(67, 97, 238, 0.1), transparent);
+            transition: all 0.6s;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-item:hover i {
+            transform: scale(1.1);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(90deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: inset 4px 0 0 0 var(--primary);
+        }
+        
+        .sidebar-item.active i {
+            color: var(--primary);
+        }
+
+        /* Стили для маршрутов */
+        .start-marker, .end-marker {
+            font-size: 20px;
+            text-align: center;
+        }
+        .error-message {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+            height: 18px;
+        }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <header class="header">
+        <div class="header-top">
+            <div class="logo">
+                <i class="fas fa-boxes"></i>
+                <span>LogiConnect</span>
+            </div>
+            <div class="burger-menu" id="burgerMenu">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+
+      <!-- Боковое меню -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Меню</div>
+                <div class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <a href="/" class="sidebar-item active">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/dashboard" class="sidebar-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    Заказы
+                </a>
+                <a href="/chat/general" class="sidebar-item">
+                    <i class="fas fa-comment-dots"></i>
+                    Чат
+                </a>
+                <a href="/profile" class="sidebar-item ">
+                    <i class="fas fa-user"></i>
+                    Профиль
+                </a>
+                <a href="/chat/support'" class="sidebar-item">
+                    <i class="fas fa-headset"></i>
+                    Поддержка
+                </a>
+                <a href="/" class="sidebar-item">
+                    <i class="fas fa-info-circle"></i>
+                    О нас
+                </a>
+                <a href="/logout" class="sidebar-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выход
+                </a>
+            </div>
+        </div>
+    
+    <main class="main-content">
+        <h2 class="section-title">
+            <i class="fas fa-user"></i>
+            Добро пожаловать, {{ user.full_name }}
+        </h2>
+        
+        <button class="btn btn-primary" id="createOrderBtn">
+            <i class="fas fa-plus"></i>
+            Создать новый заказ
+        </button>
+        
+        <h2 class="section-title">
+            <i class="fas fa-clipboard-list"></i>
+            Мои заказы
+        </h2>
+        
+        {% if orders %}
+            {% for order in orders %}
+            <div class="order-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-box"></i>
+                    </div>
+                    <div class="card-title">
+                        Заказ #{{ order.id }}
+                        <span class="status-badge status-{{ order.status }}">
+                            {% if order.status == 'pending' %}Ожидает
+                            {% elif order.status == 'in_progress' %}В процессе
+                            {% elif order.status == 'completed' %}Завершен
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="card-text">
+                    <strong>Тип груза:</strong> {{ order.cargo_type }}<br>
+                    <strong>Вес:</strong> {{ order.weight }} кг<br>
+                    <strong>Габариты:</strong> {{ order.dimensions }}
+                </div>
+                
+                <div id="map-{{ order.id }}" class="order-map"></div>
+                
+                <div class="order-details">
+                    <div class="order-detail">
+                        <div class="detail-label">Откуда</div>
+                        <div class="detail-value">{{ order.from_location }}</div>
+                    </div>
+                    <div class="order-detail">
+                        <div class="detail-label">Куда</div>
+                        <div class="detail-value">{{ order.to_location }}</div>
+                    </div>
+                    <div class="order-detail">
+                        <div class="detail-label">Время в пути</div>
+                        <div class="detail-value" id="travel-time-{{ order.id }}">-</div>
+                    </div>
+                    <div class="order-detail">
+                        <div class="detail-label">Общее время доставки</div>
+                        <div class="detail-value" id="total-time-{{ order.id }}">-</div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="info-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="card-title">Нет заказов</div>
+                </div>
+                <p class="card-text">
+                    У вас пока нет созданных заказов. Нажмите кнопку "Создать новый заказ", чтобы начать.
+                </p>
+            </div>
+        {% endif %}
+        
+        <a href="/logout" class="btn btn-danger">
+            <i class="fas fa-sign-out-alt"></i>
+            Выйти
+        </a>
+    </main>
+
+    <!-- Модальное окно создания заказа -->
+    <div class="modal" id="orderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close-modal" id="closeOrderModal">×</span>
+                <div class="modal-title">Создание нового заказа</div>
+            </div>
+            <div class="modal-body">
+                <form id="orderForm" action="/create_order" method="POST">
+                    <div class="input-group">
+                        <label for="cargo_type">Тип груза</label>
+                        <select id="cargo_type" name="cargo_type" required>
+                            <option value="">Выберите тип груза</option>
+                            <option value="Мебель">Мебель</option>
+                            <option value="Продукты">Продукты</option>
+                            <option value="Строительные материалы">Строительные материалы</option>
+                            <option value="Техника">Техника</option>
+                            <option value="Документы">Документы</option>
+                            <option value="Другое">Другое</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="weight">Вес (кг)</label>
+                        <input type="number" id="weight" name="weight" placeholder="Вес груза в килограммах" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="dimensions">Габариты (Д×Ш×В, м)</label>
+                        <input type="text" id="dimensions" name="dimensions" placeholder="Например: 1.2×0.8×0.5" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="from_location">Откуда</label>
+                        <input type="text" id="from_location" name="from_location" placeholder="Адрес отправления" required>
+                        <div id="from-error" class="error-message"></div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="to_location">Куда</label>
+                        <input type="text" id="to_location" name="to_location" placeholder="Адрес назначения" required>
+                        <div id="to-error" class="error-message"></div>
+                    </div>
+                    
+                    <div id="map"></div>
+                    
+                    <div class="route-info">
+                        <div class="route-info-item">
+                            <span class="route-info-label">Расстояние:</span>
+                            <span class="route-info-value" id="distance">-</span>
+                        </div>
+                        <div class="route-info-item">
+                            <span class="route-info-label">Время в пути:</span>
+                            <span class="route-info-value" id="duration">-</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-truck"></i>
+                        Создать заказ
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="/dashboard" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="/orders" class="nav-item" id="ordersNav">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Заказы</span>
+        </a>
+        <a href="/chat/general" class="nav-item" id="chatNav">
+            <i class="fas fa-comment-dots"></i>
+            <span>Чат</span>
+        </a>
+        <a href="/profile" class="nav-item" id="profileNav">
+            <i class="fas fa-user"></i>
+            <span>Профиль</span>
+        </a>
+    </nav>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // Исправляем пути к иконкам маркеров
+        delete L.Icon.Default.prototype._getIconUrl;
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
+
+        // Глобальные переменные для карт
+        let orderMaps = {};
+        let modalMap;
+        let routeLine;
+        let startMarker, endMarker;
+
+        // Инициализация карт для существующих заказов
+        function initOrderMaps() {
+            {% if orders %}
+                {% for order in orders %}
+                initializeOrderMap(
+                    'map-{{ order.id }}', 
+                    "{{ order.from_location }}", 
+                    "{{ order.to_location }}",
+                    'travel-time-{{ order.id }}',
+                    'total-time-{{ order.id }}'
+                );
+                {% endfor %}
+            {% endif %}
+        }
+
+        // Инициализация карты для заказа
+        async function initializeOrderMap(mapId, fromAddress, toAddress, timeElementId, totalTimeElementId) {
+            const map = L.map(mapId).setView([53.9, 27.5], 12);
+            
+            // Добавляем слой с картой OpenStreetMap
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            try {
+                // Геокодируем адреса
+                const [fromCoords, toCoords] = await Promise.all([
+                    geocodeAddress(fromAddress),
+                    geocodeAddress(toAddress)
+                ]);
+                
+                if (!fromCoords || !toCoords) {
+                    console.error('Не удалось геокодировать адреса');
+                    return;
+                }
+                
+                // Добавляем маркеры
+                startMarker = L.marker([fromCoords.lat, fromCoords.lon], {
+                    icon: L.divIcon({className: 'start-marker', html: '🟢'})
+                }).addTo(map).bindTooltip("Точка отправления");
+                
+                endMarker = L.marker([toCoords.lat, toCoords.lon], {
+                    icon: L.divIcon({className: 'end-marker', html: '🔴'})
+                }).addTo(map).bindTooltip("Точка назначения");
+                
+                // Строим маршрут через OSRM
+                const osrmResponse = await fetch(`https://router.project-osrm.org/route/v1/driving/${fromCoords.lon},${fromCoords.lat};${toCoords.lon},${toCoords.lat}?overview=full&geometries=geojson`);
+                
+                if (!osrmResponse.ok) {
+                    throw new Error(`Ошибка сервера: ${osrmResponse.status}`);
+                }
+                
+                const data = await osrmResponse.json();
+                
+                if (!data || data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                    throw new Error('Сервер не смог построить маршрут');
+                }
+                
+                const route = data.routes[0];
+                
+                if (!route.geometry || !route.geometry.coordinates || route.geometry.coordinates.length === 0) {
+                    throw new Error('Неверный формат геометрии маршрута');
+                }
+                
+                // Преобразуем координаты маршрута
+                const routeCoordinates = route.geometry.coordinates.map(coord => {
+                    if (!Array.isArray(coord) || coord.length < 2) {
+                        throw new Error('Неверный формат координат');
+                    }
+                    return [coord[1], coord[0]]; // меняем местами lat/lon
+                });
+                
+                // Отображаем маршрут на карте (синий цвет)
+                routeLine = L.polyline(routeCoordinates, {
+                    color: '#3366ff',
+                    weight: 5,
+                    opacity: 0.7
+                }).addTo(map);
+                
+                // Обновляем информацию о маршруте
+                document.getElementById(timeElementId).textContent = `${Math.floor(route.duration / 60)} мин`;
+                document.getElementById(totalTimeElementId).textContent = `${Math.floor((route.duration + 1800) / 60)} мин`;
+                
+                // Масштабируем карту под маршрут
+                map.fitBounds(routeLine.getBounds());
+                
+            } catch (error) {
+                console.error('Ошибка при построении маршрута:', error);
+                
+                // В случае ошибки просто показываем точки
+                const fromCoords = [53.9, 27.5];
+                const toCoords = [53.91, 27.6];
+                
+                L.marker(fromCoords).addTo(map).bindPopup(fromAddress);
+                L.marker(toCoords).addTo(map).bindPopup(toAddress);
+                L.polyline([fromCoords, toCoords], {color: '#3366ff', weight: 5}).addTo(map);
+                
+                document.getElementById(timeElementId).textContent = '45 мин';
+                document.getElementById(totalTimeElementId).textContent = '75 мин';
+            }
+            
+            // Сохраняем карту
+            orderMaps[mapId] = map;
+        }
+
+        // Инициализация карты в модальном окне
+        function initModalMap() {
+            modalMap = L.map('map').setView([53.9, 27.5], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(modalMap);
+        }
+
+        // Функция для геокодирования адреса
+        async function geocodeAddress(address) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address + ', Минск, Беларусь')}&limit=1`);
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data || data.length === 0 || !data[0].lat || !data[0].lon) {
+                    return null;
+                }
+                
+                return {
+                    lat: parseFloat(data[0].lat),
+                    lon: parseFloat(data[0].lon),
+                    display_name: data[0].display_name
+                };
+                
+            } catch (error) {
+                console.error('Ошибка геокодирования:', error);
+                return null;
+            }
+        }
+
+        // Функция для проверки, что координаты в пределах Минска
+        function isInMinsk(coords) {
+            // Примерные границы Минска
+            const minskBounds = {
+                minLat: 53.77,
+                maxLat: 54.00,
+                minLon: 27.35,
+                maxLon: 27.75
+            };
+            
+            return coords.lat >= minskBounds.minLat && 
+                   coords.lat <= minskBounds.maxLat && 
+                   coords.lon >= minskBounds.minLon && 
+                   coords.lon <= minskBounds.maxLon;
+        }
+
+        // Обновление маршрута в модальном окне
+        async function updateModalRoute(from, to) {
+            if (!from || !to) return;
+            
+            // Очищаем предыдущий маршрут
+            if (routeLine) modalMap.removeLayer(routeLine);
+            if (startMarker) modalMap.removeLayer(startMarker);
+            if (endMarker) modalMap.removeLayer(endMarker);
+            
+            // Показываем индикатор загрузки
+            document.getElementById('distance').textContent = 'Рассчитываем...';
+            document.getElementById('duration').textContent = 'Рассчитываем...';
+            
+            try {
+                // Геокодируем адреса
+                const [fromCoords, toCoords] = await Promise.all([
+                    geocodeAddress(from),
+                    geocodeAddress(to)
+                ]);
+                
+                if (!fromCoords) {
+                    document.getElementById('from-error').textContent = 'Адрес не найден или находится вне Минска';
+                    return;
+                }
+                
+                if (!toCoords) {
+                    document.getElementById('to-error').textContent = 'Адрес не найден или находится вне Минска';
+                    return;
+                }
+                
+                // Проверяем, что координаты в пределах Минска
+                if (!isInMinsk(fromCoords)) {
+                    document.getElementById('from-error').textContent = 'Адрес находится вне Минска';
+                    return;
+                }
+                
+                if (!isInMinsk(toCoords)) {
+                    document.getElementById('to-error').textContent = 'Адрес находится вне Минска';
+                    return;
+                }
+                
+                // Добавляем маркеры
+                startMarker = L.marker([fromCoords.lat, fromCoords.lon], {
+                    icon: L.divIcon({className: 'start-marker', html: '🟢'})
+                }).addTo(modalMap).bindTooltip("Точка отправления");
+                
+                endMarker = L.marker([toCoords.lat, toCoords.lon], {
+                    icon: L.divIcon({className: 'end-marker', html: '🔴'})
+                }).addTo(modalMap).bindTooltip("Точка назначения");
+                
+                // Строим маршрут через OSRM
+                const osrmResponse = await fetch(`https://router.project-osrm.org/route/v1/driving/${fromCoords.lon},${fromCoords.lat};${toCoords.lon},${toCoords.lat}?overview=full&geometries=geojson`);
+                
+                if (!osrmResponse.ok) {
+                    throw new Error(`Ошибка сервера: ${osrmResponse.status}`);
+                }
+                
+                const data = await osrmResponse.json();
+                
+                if (!data || data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                    throw new Error('Сервер не смог построить маршрут');
+                }
+                
+                const route = data.routes[0];
+                
+                if (!route.geometry || !route.geometry.coordinates || route.geometry.coordinates.length === 0) {
+                    throw new Error('Неверный формат геометрии маршрута');
+                }
+                
+                // Преобразуем координаты маршрута
+                const routeCoordinates = route.geometry.coordinates.map(coord => {
+                    if (!Array.isArray(coord) || coord.length < 2) {
+                        throw new Error('Неверный формат координат');
+                    }
+                    return [coord[1], coord[0]]; // меняем местами lat/lon
+                });
+                
+                // Отображаем маршрут на карте (синий цвет)
+                routeLine = L.polyline(routeCoordinates, {
+                    color: '#3366ff',
+                    weight: 5,
+                    opacity: 0.7
+                }).addTo(modalMap);
+                
+                // Обновляем информацию о маршруте
+                document.getElementById('distance').textContent = `${(route.distance / 1000).toFixed(1)} км`;
+                document.getElementById('duration').textContent = `${Math.floor(route.duration / 60)} мин`;
+                
+                // Масштабируем карту под маршрут
+                modalMap.fitBounds(routeLine.getBounds());
+                
+            } catch (error) {
+                console.error('Ошибка при построении маршрута:', error);
+                
+                // В случае ошибки просто показываем точки
+                const fromCoords = [53.9, 27.5];
+                const toCoords = [53.91, 27.6];
+                
+                L.marker(fromCoords).addTo(modalMap).bindPopup(from);
+                L.marker(toCoords).addTo(modalMap).bindPopup(to);
+                L.polyline([fromCoords, toCoords], {color: '#3366ff', weight: 5}).addTo(modalMap);
+                
+                document.getElementById('distance').textContent = '10.5 км';
+                document.getElementById('duration').textContent = '45 мин';
+            }
+        }
+
+        // Боковое меню
+        const burgerMenu = document.getElementById('burgerMenu');
+        const sidebar = document.getElementById('sidebar');
+        const closeSidebar = document.getElementById('closeSidebar');
+        
+        function openSidebar() {
+            sidebar.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeSidebarFunc() {
+            sidebar.classList.remove('open');
+            document.body.style.overflow = 'auto';
+        }
+        
+        burgerMenu.addEventListener('click', openSidebar);
+        closeSidebar.addEventListener('click', closeSidebarFunc);
+        
+        // Закрытие бокового меню при клике вне его
+        window.addEventListener('click', function(event) {
+            if (event.target === sidebar || sidebar.contains(event.target) || event.target === burgerMenu || burgerMenu.contains(event.target)) {
+                return;
+            }
+            closeSidebarFunc();
+        });
+        
+        // Обработчики событий
+        document.addEventListener('DOMContentLoaded', function() {
+            initOrderMaps();
+            initModalMap();
+            
+            // Обработчики модального окна
+            const createOrderBtn = document.getElementById('createOrderBtn');
+            const orderModal = document.getElementById('orderModal');
+            const closeOrderModal = document.getElementById('closeOrderModal');
+            
+            createOrderBtn.addEventListener('click', function() {
+                orderModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            });
+            
+            closeOrderModal.addEventListener('click', function() {
+                orderModal.style.display = 'none';
+                document.body.style.overflow = 'auto';
+            });
+            
+            // Обновление маршрута при изменении адресов
+            const fromLocation = document.getElementById('from_location');
+            const toLocation = document.getElementById('to_location');
+            
+            const debounceUpdate = debounce(function() {
+                // Очищаем предыдущие ошибки
+                document.getElementById('from-error').textContent = '';
+                document.getElementById('to-error').textContent = '';
+                
+                updateModalRoute(fromLocation.value, toLocation.value);
+            }, 1000);
+            
+            fromLocation.addEventListener('input', debounceUpdate);
+            toLocation.addEventListener('input', debounceUpdate);
+            
+            // Обработка отправки формы заказа
+            document.getElementById('orderForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обработка...';
+                
+                // Здесь должна быть отправка данных на сервер
+                this.submit();
+            });
+            
+            // Автоматически скрываем flash-сообщения через 5 секунд
+            setTimeout(() => {
+                const flashes = document.querySelectorAll('.flash');
+                flashes.forEach(flash => {
+                    flash.style.opacity = '0';
+                    setTimeout(() => flash.remove(), 300);
+                });
+            }, 5000);
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+    </script>
+</body>
+</html>

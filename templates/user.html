@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiConnect - Профиль пользователя</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --secondary: #4cc9f0;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4bb543;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        .content {
+            display: block;
+            max-width: 100%;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+        
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-info {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .user-subinfo {
+            font-size: 14px;
+            color: #e0e0e0;
+        }
+        
+        .burger-menu {
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .burger-menu:hover {
+            transform: scale(1.1);
+        }
+        
+       /* Боковое меню */
+       .sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 2000;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .sidebar-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            letter-spacing: 0.5px;
+        }
+        
+        .close-sidebar {
+            font-size: 22px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: var(--gray-light);
+        }
+        
+        .close-sidebar:hover {
+            transform: rotate(90deg);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: transparent;
+            border-radius: 12px;
+            color: var(--dark);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item i {
+            margin-right: 15px;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(67, 97, 238, 0.1), transparent);
+            transition: all 0.6s;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-item:hover i {
+            transform: scale(1.1);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(90deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: inset 4px 0 0 0 var(--primary);
+        }
+        
+        .sidebar-item.active i {
+            color: var(--primary);
+        }
+        /* Основное содержимое */
+        .main-content {
+            padding: 20px 15px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+            margin: 25px 0 15px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 24px;
+            color: var(--accent);
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .card-text {
+            color: var(--gray);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        
+        /* Кнопки */
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 0;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .action-btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        
+        .order-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32%;
+            padding: 10px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 10px 0.5%;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .order-action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .order-action-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Блок в процессе */
+        .in-progress {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .in-progress .card-text {
+            margin-bottom: 15px;
+        }
+        
+        .in-progress .map-container {
+            width: 100%;
+            height: 200px;
+            margin: 15px 0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .in-progress-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Стили для маркеров на карте */
+        .custom-marker {
+            background-color: var(--primary);
+            width: 20px;
+            height: 20px;
+            display: block;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+        
+        .start-marker {
+            background-color: var(--success);
+        }
+        
+        .end-marker {
+            background-color: var(--accent);
+        }
+        
+        /* Скрытый элемент */
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <!-- Шапка -->
+        <header class="header">
+            <div class="header-top">
+                <div class="user-info">
+                    Иван Иванов<br>
+                    <span class="user-subinfo">Клиент с IP 127.0.0.2</span>
+                </div>
+                <div class="burger-menu" id="burgerMenu">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+        </header>
+        
+         <!-- Боковое меню -->
+         <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Меню</div>
+                <div class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <a href="/" class="sidebar-item">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/dashboard" class="sidebar-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    Заказы
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-comment-dots"></i>
+                    Чат
+                </a>
+                <a href="/profile" class="sidebar-item active">
+                    <i class="fas fa-user"></i>
+                    Профиль
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-headset"></i>
+                    Поддержка
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-info-circle"></i>
+                    О нас
+                </a>
+                <a href="/logout" class="sidebar-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выход
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основное содержимое -->
+        <main class="main-content">
+            <h2 class="section-title">
+                <i class="fas fa-clipboard-list"></i>
+                Мои заказы
+            </h2>
+            <div class="info-card">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-box-open"></i>
+                    </div>
+                    <div class="card-title">Общая статистика</div>
+                </div>
+                <p class="card-text">
+                    Мои заказы: <strong>3</strong><br>
+                    В процессе: <strong>1</strong>
+                </p>
+            </div>
+        </main>
+        
+        <!-- Кнопка действий -->
+        <div style="padding: 0 15px 20px;">
+            <button class="action-btn" id="orderBtn">
+                <i class="fas fa-plus"></i>
+                Заказать
+            </button>
+        </div>
+        
+        <!-- Блок в процессе -->
+        <div class="in-progress">
+            <p class="card-text">
+                Заказ: Доставка электроники<br>
+                Время маршрута: ~2 часа 30 минут<br>
+                Статус: В пути (60% пройдено)
+            </p>
+            <div class="map-container" id="map"></div>
+            <div class="in-progress-actions">
+                <button class="order-action-btn" id="chatBtn">
+                    <i class="fas fa-comment-dots"></i>
+                    Перейти в чат
+                </button>
+                <button class="order-action-btn" id="liveBtn">
+                    <i class="fas fa-video"></i>
+                    Прямой эфир
+                </button>
+                <button class="order-action-btn" id="deliveredBtn">
+                    <i class="fas fa-check"></i>
+                    Заказ доставлен
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <!-- Leaflet Routing Machine -->
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <script>
+         // Боковое меню
+    const burgerMenu = document.getElementById('burgerMenu');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    
+    function openSidebar() {
+        sidebar.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSidebarFunc() {
+        sidebar.classList.remove('open');
+        document.body.style.overflow = 'auto';
+    }
+    
+    burgerMenu.addEventListener('click', openSidebar);
+    closeSidebar.addEventListener('click', closeSidebarFunc);
+    
+    // Закрытие бокового меню при клике вне его
+    window.addEventListener('click', function(event) {
+        if (event.target === sidebar || sidebar.contains(event.target) || event.target === burgerMenu || burgerMenu.contains(event.target)) {
+            return;
+        }
+        closeSidebarFunc();
+    });
+        
+        // Обработка кнопок в процессе
+        const chatBtn = document.getElementById('chatBtn');
+        const liveBtn = document.getElementById('liveBtn');
+        const deliveredBtn = document.getElementById('deliveredBtn');
+        
+        chatBtn.addEventListener('click', () => alert('Переход в чат...'));
+        liveBtn.addEventListener('click', () => alert('Запуск прямого эфира...'));
+        deliveredBtn.addEventListener('click', () => alert('Заказ отмечен как доставлен!'));
+        
+        // Инициализация карты
+        const map = L.map('map').setView([53.5, 25.5], 8);
+        
+        // Добавление слоя карты OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Координаты Гродно и Минска
+        const grodno = L.latLng(53.6694, 23.8131);
+        const minsk = L.latLng(53.9045, 27.5615);
+        
+        // Добавление маркеров
+        const startMarker = L.marker(grodno, {
+            icon: L.divIcon({
+                className: 'custom-marker start-marker',
+                iconSize: [24, 24]
+            })
+        }).addTo(map).bindPopup("Гродно<br>Точка отправления");
+        
+        const endMarker = L.marker(minsk, {
+            icon: L.divIcon({
+                className: 'custom-marker end-marker',
+                iconSize: [24, 24]
+            })
+        }).addTo(map).bindPopup("Минск<br>Точка назначения");
+        
+        // Прокладка маршрута
+        L.Routing.control({
+            waypoints: [grodno, minsk],
+            routeWhileDragging: false,
+            show: false,
+            addWaypoints: false,
+            draggableWaypoints: false,
+            fitSelectedRoutes: true,
+            lineOptions: {
+                styles: [{color: '#4361ee', opacity: 0.8, weight: 5}]
+            },
+            createMarker: function() { return null; } // Отключаем стандартные маркеры
+        }).addTo(map);
+        
+        // Добавление текущей позиции курьера (примерно 60% пути)
+        const courierPos = L.latLng(
+            grodno.lat + (minsk.lat - grodno.lat) * 0.6,
+            grodno.lng + (minsk.lng - grodno.lng) * 0.6
+        );
+        
+        const courierMarker = L.marker(courierPos, {
+            icon: L.divIcon({
+                className: 'fas fa-truck custom-marker',
+                iconSize: [30, 30],
+                html: '<i class="fas fa-truck" style="color: white; font-size: 16px; margin-top: 6px;"></i>',
+                popupAnchor: [0, -15]
+            })
+        }).addTo(map).bindPopup("Курьер<br>Примерно через 1 час");
+    </script>
+</body>
+</html>

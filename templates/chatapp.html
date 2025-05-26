@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiConnect - Чат</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --primary-light: rgba(67, 97, 238, 0.1);
+            --secondary: #4cc9f0;   
+            --secondary-light: rgba(76, 201, 240, 0.1);
+            --accent: #f72585;
+            --accent-light: rgba(247, 37, 133, 0.1);
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --gray-light: #e9ecef;
+            --success: #4bb543;
+            --glass: rgba(255, 255, 255, 0.2);
+            --glass-border: rgba(255, 255, 255, 0.3);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7ff 0%, #e8ecff 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Прелоадер */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+        
+        .preloader.fade-out {
+            opacity: 0;
+            display: none; /* Явно скрываем */
+        }
+        
+        .loader-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 30px;
+        }
+        
+        .truck-icon {
+            position: absolute;
+            font-size: 60px;
+            color: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: bounce 2s infinite;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        }
+        
+        .circle-loader {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        .circle-loader:nth-child(2) {
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0.2s;
+        }
+        
+        .circle-loader:nth-child(3) {
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+        
+        .preloader-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .preloader-text::after {
+            content: "";
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0% { content: ""; }
+            33% { content: "."; }
+            66% { content: ".."; }
+            100% { content: "..."; }
+        }
+        
+        /* Основной контент */
+        .content {
+            display: none;
+            max-width: 100%;
+            overflow-x: hidden;
+            padding-bottom: 100px;
+        }
+        
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 25px 20px 30px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(58, 12, 163, 0.3);
+            border-radius: 0 0 30px 30px;
+            overflow: hidden;
+            z-index: 100; /* Увеличен z-index */
+        }
+        
+        .header::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--secondary) 0%, rgba(76, 201, 240, 0) 70%);
+            opacity: 0.3;
+            z-index: -1;
+        }
+        
+        .header::after {
+            content: "";
+            position: absolute;
+            bottom: -100px;
+            left: -50px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, var(--accent) 0%, rgba(247, 37, 133, 0) 70%);
+            opacity: 0.2;
+            z-index: -1;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 22px;
+            letter-spacing: 0.5px;
+        }
+        
+        .logo i {
+            margin-right: 12px;
+            font-size: 26px;
+            color: var(--secondary);
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .burger-menu {
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            z-index: 101; /* Увеличен z-index */
+            pointer-events: auto !important; /* Гарантия кликабельности */
+        }
+        
+        .burger-menu:hover {
+            transform: scale(1.05);
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Боковое меню */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 350px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 2000;
+            transition: right 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            padding: 25px;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-light);
+        }
+        
+        .sidebar-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            letter-spacing: 0.5px;
+        }
+        
+        .close-sidebar {
+            font-size: 22px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: var(--gray-light);
+        }
+        
+        .close-sidebar:hover {
+            transform: rotate(90deg);
+            background: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 16px 20px;
+            background: transparent;
+            border-radius: 12px;
+            color: var(--dark);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sidebar-item i {
+            margin-right: 15px;
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(67, 97, 238, 0.1), transparent);
+            transition: all 0.6s;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--primary-light);
+            color: var(--primary);
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item:hover::before {
+            left: 100%;
+        }
+        
+        .sidebar-item:hover i {
+            transform: scale(1.1);
+        }
+        
+        .sidebar-item.active {
+            background: linear-gradient(90deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+            color: var(--primary);
+            font-weight: 600;
+            box-shadow: inset 4px 0 0 0 var(--primary);
+        }
+        
+        .sidebar-item.active i {
+            color: var(--primary);
+        }
+        
+        /* Основное содержимое */
+        .main-content {
+            padding: 25px 20px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+            margin: 30px 0 20px;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            position: relative;
+            padding-left: 15px;
+        }
+        
+        .section-title::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+        
+        .section-title i {
+            margin-right: 12px;
+            font-size: 22px;
+            color: var(--primary);
+            background: var(--primary-light);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+        }
+        
+        /* Чат */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 350px);
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1);
+            overflow: hidden;
+            position: relative;
+            z-index: 10; /* Увеличен z-index */
+        }
+        
+        .chat-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+            border-bottom: 1px solid var(--gray-light);
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-header i {
+            font-size: 24px;
+            color: var(--primary);
+            margin-right: 15px;
+        }
+        
+        .chat-header h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin: 0;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .message-incoming {
+            align-self: flex-start;
+            background: var(--gray-light);
+            color: var(--dark);
+            border-top-left-radius: 5px;
+        }
+        
+        .message-outgoing {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border-top-right-radius: 5px;
+        }
+        
+        .message-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+        }
+        
+        .message-time {
+            margin-left: 10px;
+        }
+        
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid var(--gray-light);
+            background: white;
+            display: flex;
+            gap: 10px;
+            z-index: 10; /* Увеличен z-index */
+            pointer-events: auto !important; /* Гарантия кликабельности */
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid var(--gray-light);
+            border-radius: 25px;
+            font-size: 14px;
+            resize: none;
+            max-height: 100px;
+            transition: all 0.3s;
+            background: white;
+            color: var(--dark);
+            outline: none;
+            pointer-events: auto !important; /* Гарантия кликабельности */
+            user-select: text !important; /* Разрешить выделение текста */
+        }
+        
+        .chat-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        .send-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+            pointer-events: auto !important; /* Гарантия кликабельности */
+        }
+        
+        .send-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .send-button:active {
+            transform: scale(0.98);
+        }
+        
+        .send-button i {
+            font-size: 18px;
+        }
+        
+        /* Поле для имени получателя (для админа) */
+        .target-user-input {
+            width: 150px;
+            padding: 12px 18px;
+            border: 1px solid var(--gray-light);
+            border-radius: 25px;
+            font-size: 14px;
+            transition: all 0.3s;
+            pointer-events: auto !important;
+        }
+        
+        .target-user-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        /* Контакты */
+        .contacts-container {
+            background: white;
+            border-radius: 18px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(67, 97, 238, 0.1);
+        }
+        
+        .contact {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            pointer-events: auto !important;
+        }
+        
+        .contact:hover {
+            background: var(--primary-light);
+        }
+        
+        .contact.active {
+            background: linear-gradient(90deg, var(--primary-light) 0%, rgba(67, 97, 238, 0.05) 100%);
+            box-shadow: inset 4px 0 0 0 var(--primary);
+        }
+        
+        .contact-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        
+        .contact-info {
+            flex: 1;
+        }
+        
+        .contact-name {
+            font-weight: 600;
+            margin-bottom: 3px;
+            color: var(--dark);
+        }
+        
+        .contact-last-message {
+            font-size: 13px;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .contact-time {
+            font-size: 12px;
+            color: var(--gray);
+            margin-left: 10px;
+        }
+        
+        .contact-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--gray-light);
+            margin-left: 10px;
+        }
+        
+        .contact-status.online {
+            background: var(--success);
+        }
+        
+        /* Кнопки */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            text-decoration: none;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            pointer-events: auto !important;
+        }
+        
+        .btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 100%);
+            z-index: -1;
+            transition: all 0.4s;
+            opacity: 0;
+        }
+        
+        .btn:hover::before {
+            opacity: 1;
+        }
+        
+        .btn i {
+            margin-right: 10px;
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 25px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .btn-block {
+            display: flex;
+            width: 100%;
+        }
+        
+        /* Нижняя навигация */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.1);
+            z-index: 200; /* Увеличен z-index */
+            border-radius: 25px 25px 0 0;
+            pointer-events: auto !important; /* Гарантия кликабельности */
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            position: relative;
+            flex: 1;
+            pointer-events: auto !important; /* Гарантия кликабельности */
+        }
+        
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 5px;
+            transition: all 0.3s;
+        }
+        
+        .nav-item span {
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .nav-item::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover {
+            color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .nav-item:hover i {
+            transform: scale(1.1);
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .nav-item.active i {
+            transform: scale(1.1);
+        }
+        
+        .nav-item.active::after {
+            opacity: 1;
+            bottom: -5px;
+        }
+        
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+        
+        .animate {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        
+        .delay-1 {
+            animation-delay: 0.1s;
+        }
+        
+        .delay-2 {
+            animation-delay: 0.2s;
+        }
+        
+        .delay-3 {
+            animation-delay: 0.3s;
+        }
+        
+        /* Сообщения */
+        .flash-messages {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 10000;
+        }
+        
+        .flash {
+            padding: 18px 25px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            color: white;
+            animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            max-width: 350px;
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        
+        .flash i {
+            margin-right: 12px;
+            font-size: 20px;
+        }
+        
+        .flash-success {
+            background: rgba(75, 181, 67, 0.9);
+        }
+        
+        .flash-error {
+            background: rgba(247, 37, 133, 0.9);
+        }
+        
+        @keyframes slideIn {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        /* Модерн эффекты */
+        .glow-effect {
+            position: relative;
+        }
+        
+        .glow-effect::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(67, 97, 238, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s;
+            pointer-events: none;
+        }
+        
+        .glow-effect:hover::after {
+            opacity: 1;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 280px;
+            }
+            
+            .chat-container {
+                height: calc(100vh - 250px);
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+            
+            .bottom-nav {
+                z-index: 200;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Прелоадер -->
+    <div class="preloader">
+        <div class="loader-container">
+            <div class="circle-loader"></div>
+            <div class="circle-loader"></div>
+            <div class="circle-loader"></div>
+            <i class="fas fa-truck-moving truck-icon"></i>
+        </div>
+        <div class="preloader-text">Загружаем LogiConnect</div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="content">
+        <!-- Шапка -->
+        <header class="header glow-effect">
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fas fa-boxes"></i>
+                    <span>LogiConnect</span>
+                </div>
+                <div class="burger-menu" id="burgerMenu">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            
+            <div class="profile-header" style="margin-top: 25px;">
+                <div class="profile-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name" id="profileName">{{ session['user_name'] if 'user_name' in session else 'Гость' }}</div>
+                    <div class="profile-ip">
+                        <i class="fas fa-globe"></i>
+                        <span id="profileIp">{{ user.ip_address if user else 'Не указан' }}</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Боковое меню -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Меню</div>
+                <div class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <a href="/dashboard" class="sidebar-item">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="/dashboard" class="sidebar-item">
+                    <i class="fas fa-clipboard-list"></i>
+                    Заказы
+                </a>
+                <a href="/chat/general" class="sidebar-item {% if chat_type == 'general' %}active{% endif %}">
+                    <i class="fas fa-comment-dots"></i>
+                    Чат
+                </a>
+                <a href="/profile" class="sidebar-item">
+                    <i class="fas fa-user"></i>
+                    Профиль
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-headset"></i>
+                    Поддержка
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-info-circle"></i>
+                    О нас
+                </a>
+                <a href="/logout" class="sidebar-item">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Выход
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основное содержимое -->
+        <main class="main-content">
+            <h2 class="section-title animate">
+                <i class="fas fa-comments"></i>
+                {% if chat_type == 'support' %}Чат с поддержкой{% else %}Общий чат{% endif %}
+            </h2>
+            
+            <div class="chat-container animate delay-1 glow-effect">
+                <div class="chat-header">
+                    <i class="fas fa-headset"></i>
+                    <h3>{% if chat_type == 'support' %}Техническая поддержка{% else %}Общий чат{% endif %}</h3>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Сообщения будут добавляться через JavaScript -->
+                </div>
+                
+                <div class="chat-input-container">
+                    {% if chat_type == 'support' and session['user_name'] == 'admin' %}
+                        <input type="text" class="target-user-input" id="targetUserInput" placeholder="Имя пользователя">
+                    {% endif %}
+                    <textarea class="chat-input" id="messageInput" placeholder="Введите сообщение..." rows="1"></textarea>
+                    <button class="send-button" id="sendButton">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Контакты -->
+            <h2 class="section-title animate delay-2">
+                <i class="fas fa-users"></i>
+                Контакты
+            </h2>
+            
+            <div class="contacts-container animate delay-2 glow-effect">
+                <div class="contact {% if chat_type == 'support' %}active{% endif %}" data-chat-type="support">
+                    <div class="contact-avatar">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">Техническая поддержка</div>
+                        <div class="contact-last-message">Чат с администратором</div>
+                    </div>
+                    <div class="contact-time">10:33</div>
+                    <div class="contact-status online"></div>
+                </div>
+                
+                <div class="contact {% if chat_type == 'general' %}active{% endif %}" data-chat-type="general">
+                    <div class="contact-avatar">Ч</div>
+                    <div class="contact-info">
+                        <div class="contact-name">Общий чат</div>
+                        <div class="contact-last-message">Общение всех пользователей</div>
+                    </div>
+                    <div class="contact-time">10:33</div>
+                    <div class="contact-status online"></div>
+                </div>
+            </div>
+        </main>
+        
+        <!-- Нижняя навигация -->
+        <nav class="bottom-nav">
+            <a href="/dashboard" class="nav-item">
+                <i class="fas fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="/dashboard" class="nav-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Заказы</span>
+            </a>
+            <a href="/chat/general" class="nav-item {% if chat_type == 'general' %}active{% endif %}">
+                <i class="fas fa-comment-dots"></i>
+                <span>Чат</span>
+            </a>
+            <a href="/profile" class="nav-item">
+                <i class="fas fa-user"></i>
+                <span>Профиль</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Flash-сообщения -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        <i class="fas {{ 'fa-check-circle' if category == 'success' else 'fa-exclamation-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+<script>
+
+
+    username = '{{ session["user_name"] }}';
+    const chatType = '{{ chat_type }}';
+    let lastMessageTime = 0;
+    let isScrolledToBottom = true;
+    let isConnected = true;
+    let updateInterval;
+
+    // DOM элементы
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendButton = document.getElementById('sendButton');
+    const burgerMenu = document.getElementById('burgerMenu');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+
+    // Отладка: проверка наличия элементов
+    console.log('Burger menu:', burgerMenu);
+    console.log('Message input:', messageInput);
+    console.log('Send button:', sendButton);
+
+    // Функция экранирования HTML
+    function escapeHTML(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // Функция форматирования времени
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.getHours().toString().padStart(2, '0') + ':' + 
+               date.getMinutes().toString().padStart(2, '0');
+    }
+
+    // Функция создания элемента сообщения
+    function createMessageElement(sender, text, timestamp) {
+        const isOutgoing = sender === username;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isOutgoing ? 'message-outgoing' : 'message-incoming'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="message-text">${escapeHTML(text)}</div>
+            <div class="message-info">
+                <span class="message-sender">${escapeHTML(sender)}</span>
+                <span class="message-time">${formatTime(timestamp)}</span>
+            </div>
+        `;
+        
+        return messageDiv;
+    }
+
+    // Функция обновления сообщений
+async function updateMessages() {
+    if (!isConnected) return;
+
+    try {
+        const response = await fetch(`/get_messages?last=${lastMessageTime}&chat_type=${chatType}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const messages = await response.json();
+        const shouldScroll = isScrolledToBottom && 
+            chatMessages.scrollHeight - chatMessages.clientHeight <= chatMessages.scrollTop + 100;
+
+        messages.forEach(msg => {
+            // Исправленная обработка сообщений
+            chatMessages.appendChild(createMessageElement(msg.username, msg.text, msg.timestamp));
+            lastMessageTime = msg.timestamp;
+        });
+
+        if (messages.length > 0 && shouldScroll) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    } catch (error) {
+        console.error('Ошибка обновления сообщений:', error);
+        if (error.message.includes('Failed to fetch')) {
+            showFlashMessage('Потеряно соединение с сервером', 'error');
+            isConnected = false;
+            clearInterval(updateInterval);
+        }
+    }
+}
+
+
+    // Функция отправки сообщения
+    async function sendMessage() {
+        console.log('Sending message...');
+        const messageText = messageInput.value.trim();
+        if (!messageText || !isConnected) {
+            console.log('Message empty or not connected');
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('message', messageText);
+            formData.append('chat_type', chatType);
+            
+            if (chatType === 'support' && document.getElementById('targetUserInput')) {
+                const targetUser = document.getElementById('targetUserInput').value.trim();
+                if (targetUser) formData.append('target_user', targetUser);
+            }
+
+            const response = await fetch('/send_message', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Ошибка отправки');
+            }
+
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            isScrolledToBottom = true;
+            
+            setTimeout(updateMessages, 100);
+        } catch (error) {
+            console.error('Ошибка отправки:', error);
+            showFlashMessage(error.message || 'Ошибка отправки сообщения', 'error');
+        }
+    }
+
+    // Функция показа уведомлений
+    function showFlashMessage(message, type) {
+        const flashContainer = document.querySelector('.flash-messages') || createFlashContainer();
+        const flash = document.createElement('div');
+        
+        flash.className = `flash flash-${type}`;
+        flash.innerHTML = `
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+            ${escapeHTML(message)}
+        `;
+        
+        flashContainer.appendChild(flash);
+        document.body.appendChild(flashContainer);
+        
+        setTimeout(() => flash.remove(), 5000);
+    }
+
+    function createFlashContainer() {
+        const container = document.createElement('div');
+        container.className = 'flash-messages';
+        return container;
+    }
+
+    // Функция проверки соединения
+    async function checkConnection() {
+        try {
+            const response = await fetch('/ping');
+            if (response.ok) {
+                if (!isConnected) {
+                    isConnected = true;
+                    showFlashMessage('Соединение восстановлено', 'success');
+                    startUpdating();
+                }
+                return true;
+            }
+        } catch (error) {
+            if (isConnected) {
+                isConnected = false;
+                showFlashMessage('Потеряно соединение с сервером', 'error');
+                clearInterval(updateInterval);
+            }
+            return false;
+        }
+    }
+
+    // Функция запуска обновления сообщений
+    function startUpdating() {
+        clearInterval(updateInterval);
+        updateMessages();
+        updateInterval = setInterval(updateMessages, 2000);
+    }
+
+    // Обработчики событий
+    function initEventListeners() {
+        // Отправка сообщений
+        if (sendButton) {
+            sendButton.addEventListener('click', sendMessage);
+        }
+        
+        if (messageInput) {
+            messageInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = this.scrollHeight + 'px';
+            });
+        }
+
+        // Обработка скролла
+        if (chatMessages) {
+            chatMessages.addEventListener('scroll', function() {
+                isScrolledToBottom = this.scrollHeight - this.clientHeight <= this.scrollTop + 100;
+            });
+        }
+
+        // Боковое меню
+        if (burgerMenu && sidebar) {
+            burgerMenu.addEventListener('click', () => {
+                console.log('Burger menu clicked');
+                sidebar.classList.add('open');
+            });
+        }
+
+        if (closeSidebar && sidebar) {
+            closeSidebar.addEventListener('click', () => {
+                console.log('Close sidebar clicked');
+                sidebar.classList.remove('open');
+            });
+        }
+
+        // Закрытие меню при клике вне его
+        document.addEventListener('click', (e) => {
+            if (sidebar && burgerMenu && !sidebar.contains(e.target) && !burgerMenu.contains(e.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+
+        // Проверка соединения каждые 5 секунд
+        setInterval(checkConnection, 5000);
+
+        // Обработка закрытия страницы
+        window.addEventListener('beforeunload', () => {
+            fetch('/disconnect_chat', { method: 'POST', keepalive: true });
+        });
+    }
+
+    // Инициализация при загрузке
+    document.addEventListener('DOMContentLoaded', () => {
+        // Скрытие прелоадера
+        setTimeout(() => {
+            const preloader = document.querySelector('.preloader');
+            if (preloader) {
+                preloader.classList.add('fade-out');
+                setTimeout(() => {
+                    preloader.style.display = 'none';
+                    const content = document.querySelector('.content');
+                    if (content) {
+                        content.style.display = 'block';
+                    }
+                }, 800);
+            }
+        }, 1000);
+
+        // Инициализация слушателей событий
+        initEventListeners();
+
+        // Первоначальная загрузка сообщений
+        startUpdating();
+        
+        // Прокрутка вниз при первой загрузке
+        setTimeout(() => {
+            if (chatMessages) {
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }, 300);
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiConnect - логистическая платформа</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --secondary: #4cc9f0;   
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #4bb543;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7ff;
+            color: var(--dark);
+            overflow-x: hidden;
+        }
+        
+        /* Анимированный прелоадер */
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.8s ease;
+        }
+        
+        .preloader.fade-out {
+            opacity: 0;
+        }
+        
+        .loader-container {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 30px;
+        }
+        
+        .truck-icon {
+            position: absolute;
+            font-size: 60px;
+            color: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: bounce 2s infinite;
+        }
+        
+        .circle-loader {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        .circle-loader:nth-child(2) {
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+            animation-delay: 0.2s;
+        }
+        
+        .circle-loader:nth-child(3) {
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        @keyframes bounce {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(1);
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.1);
+            }
+        }
+        
+        .preloader-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            position: relative;
+        }
+        
+        .preloader-text::after {
+            content: "";
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0% { content: ""; }
+            33% { content: "."; }
+            66% { content: ".."; }
+            100% { content: "..."; }
+        }
+        
+        /* Основной контент */
+        .content {
+            display: none;
+            max-width: 100%;
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+        
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            color: white;
+            padding: 20px 15px;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 0 0 20px 20px;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 20px;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            font-size: 24px;
+            color: var(--secondary);
+        }
+        
+        .burger-menu {
+            font-size: 24px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .burger-menu:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Боковое меню */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100%;
+            background: white;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            z-index: 2000;
+            transition: right 0.3s ease;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .sidebar.open {
+            right: 0;
+        }
+        
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .sidebar-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .close-sidebar {
+            font-size: 24px;
+            color: var(--gray);
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .close-sidebar:hover {
+            transform: rotate(90deg);
+        }
+        
+        .sidebar-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            color: var(--dark);
+            text-decoration: none;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .sidebar-item i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .sidebar-item:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(5px);
+        }
+        
+        .sidebar-item.active {
+            background: var(--primary);
+            color: white;
+        }
+        
+        /* Слайдер */
+        .slider-container {
+            margin-top: 20px;
+            position: relative;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            height: 180px;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .slide.active {
+            opacity: 1;
+        }
+        
+        .slide-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+        }
+        
+        .slide-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .slide-desc {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .slider-dots {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            z-index: 2;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            margin: 0 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .dot.active {
+            background: white;
+            width: 20px;
+            border-radius: 4px;
+        }
+        
+        /* Основное содержимое */
+        .main-content {
+            padding: 20px 15px;
+        }
+        
+        .section-title {
+            display: flex;
+            align-items: center;
+            color: var(--primary-dark);
+            margin: 25px 0 15px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .section-title i {
+            margin-right: 10px;
+            font-size: 24px;
+            color: var(--accent);
+        }
+        
+        /* Кнопка авторизации */
+        .auth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 25px 0;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .auth-btn i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .auth-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Информационные блоки */
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border-left: 4px solid var(--secondary);
+        }
+        
+        .info-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+        
+        .card-text {
+            color: var(--gray);
+            line-height: 1.6;
+            font-size: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .feature-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        
+        .feature-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(to bottom right, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 10px;
+        }
+        
+        .feature-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 5px;
+        }
+        
+        .feature-desc {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* Статистика */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 25px 0;
+        }
+        
+        .stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 10px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .stat-icon {
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        
+        .stat-number {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 3px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* Модальное окно авторизации */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            animation: modalSlideUp 0.4s ease forwards;
+        }
+        
+        @keyframes modalSlideUp {
+            to { transform: translateY(0); }
+        }
+        
+        .modal-header {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        
+        .modal-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.3s;
+        }
+        
+        .close-modal:hover {
+            transform: rotate(90deg);
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--dark);
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 15px;
+            top: 38px;
+            color: var(--gray);
+            font-size: 18px;
+        }
+        
+        .modal-actions {
+            margin-top: 25px;
+        }
+        
+        .modal-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-btn i {
+            margin-right: 10px;
+        }
+        
+        .login-btn {
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+        
+        .register-btn {
+            background: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+        }
+        
+        .register-btn:hover {
+            background: #f5f7ff;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 20px 0;
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        .divider::before, .divider::after {
+            content: "";
+            flex: 1;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .divider::before {
+            margin-right: 15px;
+        }
+        
+        .divider::after {
+            margin-left: 15px;
+        }
+        
+        .social-login {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        .social-btn {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-3px);
+        }
+        
+        .facebook {
+            background: #3b5998;
+        }
+        
+        .google {
+            background: #db4437;
+        }
+        
+        .apple {
+            background: #000000;
+        }
+        
+        /* Нижняя навигация */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 100;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 12px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .nav-item i {
+            font-size: 22px;
+            margin-bottom: 3px;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .nav-item.active::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            width: 6px;
+            height: 6px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+        
+        /* Стили для полей ввода PIN-кода */
+        .pin-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .pin-input {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            font-size: 24px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .pin-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+            outline: none;
+        }
+        
+        /* Скрытый элемент */
+        .hidden {
+            display: none;
+        }
+        
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+        
+        .delay-1 {
+            animation-delay: 0.1s;
+        }
+        
+        .delay-2 {
+            animation-delay: 0.2s;
+        }
+        
+        .delay-3 {
+            animation-delay: 0.3s;
+        }
+        .flash-messages {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.flash {
+    padding: 15px 20px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    color: white;
+    animation: slideIn 0.3s ease-out;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.flash-success {
+    background-color: var(--success);
+}
+
+.flash-error {
+    background-color: var(--accent);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- Прелоадер -->
+    <div class="preloader">
+        <div class="loader-container">
+            <div class="circle-loader"></div>
+            <div class="circle-loader"></div>
+            <div class="circle-loader"></div>
+            <i class="fas fa-truck-moving truck-icon"></i>
+        </div>
+        <div class="preloader-text">Загружаем LogiConnect</div>
+    </div>
+    
+    <!-- Основной контент -->
+    <div class="content">
+        <!-- Шапка -->
+        <header class="header">
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fas fa-boxes"></i>
+                    <span>LogiConnect</span>
+                </div>
+                <div class="burger-menu" id="burgerMenu">
+                    <i class="fas fa-bars"></i>
+                </div>
+            </div>
+            
+            <!-- Слайдер -->
+            <div class="slider-container">
+                <div class="slider">
+                    <div class="slide active" style="background-image: url('https://st.mplogistics.ru/source/1/847x429_ONc5pfYCVseK9vlto4PFWXnk2d7Y8uEA.jpg');">
+                        <div class="slide-overlay">
+                            <div class="slide-title">Быстрая доставка</div>
+                            <div class="slide-desc">Гарантированные сроки по всей стране</div>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQN7wEBXy7S3u4ZuUzet2sHSUHThqAWTi3fyg&s');">
+                        <div class="slide-overlay">
+                            <div class="slide-title">Надежные перевозчики</div>
+                            <div class="slide-desc">Проверенные транспортные компании</div>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://stslog.com/uploads/blog/otslezhivanie_gruza.jpg');">
+                        <div class="slide-overlay">
+                            <div class="slide-title">Отслеживание грузов</div>
+                            <div class="slide-desc">Реальное время движения вашего груза</div>
+                        </div>
+                    </div>
+                    <div class="slide" style="background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQy6FyWUtKUPx0waSHYKkTCCn8GarFqCzqrUQ&s');">
+                        <div class="slide-overlay">
+                            <div class="slide-title">24/7 Поддержка</div>
+                            <div class="slide-desc">Наши операторы всегда на связи</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="slider-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Боковое меню -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">Меню</div>
+                <div class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div class="sidebar-menu">
+                <a href="#" class="sidebar-item active">
+                    <i class="fas fa-home"></i>
+                    Главная
+                </a>
+                <a href="#" class="sidebar-item" data-modal="auth">
+                    <i class="fas fa-clipboard-list"></i>
+                    Заказы
+                </a>
+                <a href="#" class="sidebar-item" data-modal="auth">
+                    <i class="fas fa-comment-dots"></i>
+                    Чат
+                </a>
+                <a href="#" class="sidebar-item" data-modal="auth">
+                    <i class="fas fa-user"></i>
+                    Профиль
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-headset"></i>
+                    Поддержка
+                </a>
+                <a href="#" class="sidebar-item">
+                    <i class="fas fa-info-circle"></i>
+                    О нас
+                </a>
+            </div>
+        </div>
+        
+        <!-- Основное содержимое -->
+        <main class="main-content">
+            <button class="auth-btn" id="authBtn">
+                <i class="fas fa-user-circle"></i>
+                Авторизация
+            </button>
+            
+            <!-- Информационные блоки -->
+            <h2 class="section-title animate">
+                О платформе
+            </h2>
+            
+            <div class="info-card animate delay-1">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <div class="card-title">Связь между заказчиками и перевозчиками</div>
+                </div>
+                <p class="card-text">
+                    LogiConnect - это инновационная платформа, созданная для удобного взаимодействия между заказчиками грузоперевозок и профессиональными перевозчиками. Наша система упрощает процесс поиска транспорта и управления грузоперевозками в режиме реального времени.
+                </p>
+            </div>
+            
+            <h2 class="section-title animate delay-2">
+                <i class="fas fa-chart-line"></i>
+                Наша статистика
+            </h2>
+            
+            <div class="stats-container">
+                <div class="stat-item animate delay-1">
+                    <i class="fas fa-truck stat-icon"></i>
+                    <div class="stat-number">1,500+</div>
+                    <div class="stat-label">Перевозчиков</div>
+                </div>
+                <div class="stat-item animate delay-2">
+                    <i class="fas fa-box-open stat-icon"></i>
+                    <div class="stat-number">5,000+</div>
+                    <div class="stat-label">Заказов</div>
+                </div>
+                <div class="stat-item animate delay-3">
+                    <i class="fas fa-check-circle stat-icon"></i>
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Успешных доставок</div>
+                </div>
+            </div>
+            
+            <h2 class="section-title animate delay-3">
+                <i class="fas fa-cogs"></i>
+                Как это работает?
+            </h2>
+            
+            <div class="info-card animate delay-1">
+                <div class="card-header">
+                    <div class="card-icon">
+                        <i class="fas fa-list-ol"></i>
+                </div>
+                <div class="card-title">4 простых шага</div>
+            </div>
+            <p class="card-text">
+                1. <strong>Создание заявки</strong> - Заказчик заполняет детали груза (габариты, вес, маршрут)<br><br>
+                2. <strong>Подбор перевозчиков</strong> - Система автоматически находит подходящих перевозчиков<br><br>
+                3. <strong>Получение предложений</strong> - Перевозчики присылают свои условия и цены<br><br>
+                4. <strong>Выбор и контроль</strong> - Заказчик выбирает лучшее предложение и отслеживает доставку
+            </p>
+        </div>
+        
+        <h2 class="section-title animate delay-2">
+            <i class="fas fa-star"></i>
+            Наши преимущества
+        </h2>
+        
+        <div class="features-grid">
+            <div class="feature-item animate delay-1">
+                <div class="feature-icon">
+                    <i class="fas fa-wallet"></i>
+                </div>
+                <div class="feature-title">Экономия до 30%</div>
+                <div class="feature-desc">Конкуренция между перевозчиками снижает цены</div>
+            </div>
+            <div class="feature-item animate delay-2">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="feature-title">Безопасность</div>
+                <div class="feature-desc">Проверенные перевозчики и страхование грузов</div>
+            </div>
+            <div class="feature-item animate delay-3">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="feature-title">Экономия времени</div>
+                <div class="feature-desc">Поиск перевозчика занимает минуты</div>
+            </div>
+            <div class="feature-item animate delay-1">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <div class="feature-title">Чат с перевозчиком</div>
+                <div class="feature-desc">Обсуждайте детали в реальном времени</div>
+            </div>
+            <div class="feature-item animate delay-2">
+                <div class="feature-icon">
+                    <i class="fas fa-map-marked-alt"></i>
+                </div>
+                <div class="feature-title">Отслеживание</div>
+                <div class="feature-desc">Груз на карте в реальном времени</div>
+            </div>
+            <div class="feature-item animate delay-3">
+                <div class="feature-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div class="feature-title">Поддержка 24/7</div>
+                <div class="feature-desc">Помощь на всех этапах перевозки</div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Модальное окно авторизации -->
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close-modal" id="closeModal">×</span>
+                <div class="modal-title" id="modalTitle">Добро пожаловать!</div>
+                <div class="modal-subtitle" id="modalSubtitle">Войдите в свой аккаунт</div>
+            </div>
+            <div class="modal-body">
+                <!-- Форма логина -->
+                <div id="loginForm">
+                    <form action="/login" method="POST">
+                        <div class="input-group">
+                            <label for="fullName">ФИО</label>
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="fullName" name="fullName" placeholder="Ваше ФИО" required>
+                        </div>
+                        <div class="input-group">
+                            <label>PIN-код (4 цифры)</label>
+                            <div class="pin-container">
+                                <input type="password" class="pin-input" name="pin1" maxlength="1" oninput="moveToNext(this, 1)" required>
+                                <input type="password" class="pin-input" name="pin2" maxlength="1" oninput="moveToNext(this, 2)" required>
+                                <input type="password" class="pin-input" name="pin3" maxlength="1" oninput="moveToNext(this, 3)" required>
+                                <input type="password" class="pin-input" name="pin4" maxlength="1" required>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="modal-btn login-btn">
+                                <i class="fas fa-sign-in-alt"></i>
+                                Войти
+                            </button>
+                        </div>
+                    </form>
+                        <button class="modal-btn register-btn" id="showRegister">
+                            <i class="fas fa-user-plus"></i>
+                            Создать аккаунт
+                        </button>
+                    </div>
+                    <!-- <div class="divider">или войдите через</div>
+                    <div class="social-login">
+                        <div class="social-btn facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="social-btn google">
+                            <i class="fab fa-google"></i>
+                        </div>
+                        <div class="social-btn apple">
+                            <i class="fab fa-apple"></i>
+                        </div>
+                    </div> -->
+                </div>
+                <!-- Форма регистрации -->
+                <div id="registerForm" class="hidden">
+                    <form action="/register" method="POST">
+                        <div class="input-group">
+                            <label for="ipAddress" style="margin-left: 3%;">IP</label>
+                            <i class="fa-solid fa-globe input-icon"></i>
+                            <input type="text" id="ipAddress" name="ipAddress" placeholder="Пример 127.0.0.2" required>
+                        </div>
+                        <div class="input-group">
+                            <label for="fullName" style="margin-left: 3%;">ФИО</label>
+                            <i class="fas fa-user input-icon"></i>
+                            <input type="text" id="fullName" name="fullName" placeholder="Ваше ФИО" required>
+                        </div>
+                        <div class="input-group">
+                            <label style="margin-left: 3%;">Пароль (4 цифры)</label>
+                            <div class="pin-container">
+                                <input type="text" class="pin-input" name="pin1" maxlength="1" oninput="moveToNext(this, 1)" required>
+                                <input type="text" class="pin-input" name="pin2" maxlength="1" oninput="moveToNext(this, 2)" required>
+                                <input type="text" class="pin-input" name="pin3" maxlength="1" oninput="moveToNext(this, 3)" required>
+                                <input type="text" class="pin-input" name="pin4" maxlength="1" required>
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="modal-btn login-btn">
+                                <i class="fas fa-user-plus"></i>
+                                Зарегистрироваться
+                            </button>
+                        </div>
+                    </form>
+                        <button class="modal-btn register-btn" id="showLogin">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Вернуться к входу
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Нижняя навигация -->
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active">
+            <i class="fas fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="#" class="nav-item" data-modal="auth">
+            <i class="fas fa-clipboard-list"></i>
+            <span>Заказы</span>
+        </a>
+        <a href="#" class="nav-item" data-modal="auth">
+            <i class="fas fa-comment-dots"></i>
+            <span>Чат</span>
+        </a>
+        <a href="#" class="nav-item" data-modal="auth">
+            <i class="fas fa-user"></i>
+            <span>Профиль</span>
+        </a>
+    </nav>
+</div>
+
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<script>
+    // Прелоадер
+    window.addEventListener('load', function() {
+        setTimeout(function() {
+            const preloader = document.querySelector('.preloader');
+            preloader.classList.add('fade-out');
+            
+            setTimeout(function() {
+                preloader.style.display = 'none';
+                document.querySelector('.content').style.display = 'block';
+                
+                // Анимация элементов после загрузки
+                const animateElements = document.querySelectorAll('.animate');
+                animateElements.forEach(el => {
+                    el.style.opacity = '0';
+                });
+                
+                setTimeout(() => {
+                    animateElements.forEach(el => {
+                        el.style.opacity = '1';
+                    });
+                }, 100);
+            }, 800);
+        }, 4000); // 4 секунды
+    });
+    
+    // Слайдер
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.dot');
+    
+    function showSlide(n) {
+        slides.forEach(slide => slide.classList.remove('active'));
+        dots.forEach(dot => dot.classList.remove('active'));
+        
+        currentSlide = (n + slides.length) % slides.length;
+        slides[currentSlide].classList.add('active');
+        dots[currentSlide].classList.add('active');
+    }
+    
+    function nextSlide() {
+        showSlide(currentSlide + 1);
+    }
+    
+    // Автопереключение слайдов каждые 5 секунд
+    let slideInterval = setInterval(nextSlide, 5000);
+    
+    // Клик по точкам слайдера
+    dots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            clearInterval(slideInterval);
+            showSlide(index);
+            slideInterval = setInterval(nextSlide, 5000);
+        });
+    });
+    
+    // Боковое меню
+    const burgerMenu = document.getElementById('burgerMenu');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    
+    function openSidebar() {
+        sidebar.classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSidebarFunc() {
+        sidebar.classList.remove('open');
+        document.body.style.overflow = 'auto';
+    }
+    
+    burgerMenu.addEventListener('click', openSidebar);
+    
+    closeSidebar.addEventListener('click', closeSidebarFunc);
+    
+    // Закрытие бокового меню при клике вне его
+    window.addEventListener('click', function(event) {
+        if (event.target === sidebar || sidebar.contains(event.target) || event.target === burgerMenu || burgerMenu.contains(event.target)) {
+            return;
+        }
+        closeSidebarFunc();
+    });
+    
+    // Модальное окно
+    const authBtn = document.getElementById('authBtn');
+    const authModal = document.getElementById('authModal');
+    const closeModal = document.getElementById('closeModal');
+    const showRegister = document.getElementById('showRegister');
+    const showLogin = document.getElementById('showLogin');
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSubtitle = document.getElementById('modalSubtitle');
+    
+    function openModal() {
+        authModal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        // Показать форму логина по умолчанию
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        modalTitle.textContent = 'Добро пожаловать!';
+        modalSubtitle.textContent = 'Войдите в свой аккаунт';
+        // Закрыть боковое меню, если открыто
+        closeSidebarFunc();
+    }
+    
+    function closeModalFunc() {
+        authModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        // Сбросить формы
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        modalTitle.textContent = 'Добро пожаловать!';
+        modalSubtitle.textContent = 'Войдите в свой аккаунт';
+    }
+    
+    authBtn.addEventListener('click', openModal);
+    
+    closeModal.addEventListener('click', closeModalFunc);
+    
+    window.addEventListener('click', function(event) {
+        if (event.target === authModal) {
+            closeModalFunc();
+        }
+    });
+    
+    // Переключение на форму регистрации
+    showRegister.addEventListener('click', function() {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        modalTitle.textContent = 'Создать аккаунт';
+        modalSubtitle.textContent = 'Зарегистрируйтесь в LogiConnect';
+    });
+    
+    // Переключение на форму логина
+    showLogin.addEventListener('click', function() {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        modalTitle.textContent = 'Добро пожаловать!';
+        modalSubtitle.textContent = 'Войдите в свой аккаунт';
+    });
+    
+    // Открытие модального окна при клике на серые кнопки навигации и бокового меню
+    const authTriggers = document.querySelectorAll('[data-modal="auth"]');
+    authTriggers.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal();
+        });
+    });
+    
+    // Логика для дополнительных пунктов меню (Поддержка, О нас)
+    const sidebarItems = document.querySelectorAll('.sidebar-item:not([data-modal="auth"])');
+    sidebarItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            closeSidebarFunc();
+            if (this.textContent.includes('Поддержка')) {
+                alert('Свяжитесь с нашей службой поддержки: support@logiconnect.ru');
+            } else if (this.textContent.includes('О нас')) {
+                alert('LogiConnect - инновационная платформа для грузоперевозок. Узнайте больше на нашем сайте!');
+            }
+        });
+    });
+    
+    // Логика для PIN-кода
+    function moveToNext(input, index) {
+        if (input.value.length === 1 && index < 4) {
+            const nextInput = input.parentElement.children[index];
+            nextInput.focus();
+        }
+    }
+    
+    // Анимации при прокрутке
+    const animateElements = document.querySelectorAll('.animate');
+    
+    function checkScroll() {
+        animateElements.forEach(el => {
+            const elTop = el.getBoundingClientRect().top;
+            const windowHeight = window.innerHeight;
+            
+            if (elTop < windowHeight - 100) {
+                el.style.animation = 'fadeInUp 0.6s ease forwards';
+                el.style.opacity = '1';
+            }
+        });
+    }
+    
+    window.addEventListener('scroll', checkScroll);
+    checkScroll(); // Проверить при загрузке
+    
+    // Фикс для мобильного скролла
+    let touchStartY = 0;
+    
+    document.addEventListener('touchstart', e => {
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    
+    document.addEventListener('touchmove', e => {
+        const touchY = e.touches[0].clientY;
+        const modalContent = document.querySelector('.modal-content');
+        
+        if (authModal.style.display === 'flex') {
+            // Если скроллим вниз и достигли верха модального окна
+            if (touchY > touchStartY && modalContent.scrollTop === 0) {
+                e.preventDefault();
+            }
+            touchStartY = touchY;
+        }
+    }, { passive: false });
+</script>
+</body>
+</html>

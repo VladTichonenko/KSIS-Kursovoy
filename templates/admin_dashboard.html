@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - LogiConnect</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a0ca3;
+            --secondary: #4cc9f0;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --info: #17a2b8;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            margin-bottom: 20px;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .order-card {
+            border-left: 4px solid;
+        }
+        
+        .order-pending {
+            border-left-color: var(--warning);
+        }
+        
+        .order-in_progress {
+            border-left-color: var(--primary);
+        }
+        
+        .order-completed {
+            border-left-color: var(--success);
+        }
+        
+        .order-cancelled {
+            border-left-color: var(--danger);
+        }
+        
+        .badge {
+            font-weight: 500;
+            padding: 5px 10px;
+        }
+        
+        .online-badge {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        
+        .online {
+            background-color: var(--success);
+        }
+        
+        .offline {
+            background-color: var(--danger);
+        }
+        
+        .user-table tr:hover {
+            background-color: rgba(0,0,0,0.02);
+        }
+        
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .refresh-btn {
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            transform: rotate(180deg);
+        }
+        
+        .last-activity {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+        
+        .action-btn {
+            min-width: 100px;
+            margin: 2px;
+        }
+        
+        .real-time-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .flash-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-truck"></i> LogiConnect Admin
+            </a>
+            <div class="d-flex align-items-center">
+                <span class="badge bg-light text-dark real-time-badge me-3">
+                    <i class="bi bi-lightning-charge"></i> Real-time
+                </span>
+                <a class="btn btn-outline-light btn-sm me-2" href="{{ url_for('admin_logout') }}">
+                    <i class="bi bi-box-arrow-right"></i> Выйти
+                </a>
+                <button class="btn btn-light btn-sm refresh-btn" id="refreshBtn">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-clipboard-data"></i> Статистика
+                        </h5>
+                        <div class="row text-center">
+                            <div class="col">
+                                <h3>{{ orders|length }}</h3>
+                                <p class="text-muted">Всего заказов</p>
+                            </div>
+                            <div class="col">
+                                <h3>{{ users|length }}</h3>
+                                <p class="text-muted">Пользователей</p>
+                            </div>
+                            <div class="col">
+                                <h3>{{ online_users_count }}</h3>
+                                <p class="text-muted">Онлайн сейчас</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-speedometer2"></i> Быстрые действия
+                        </h5>
+                        <div class="d-flex flex-wrap">
+                           <button class="btn btn-outline-primary me-2 mb-2" onclick="window.location.href='/admin/chat'">
+    <i class="bi bi-plus-circle"></i> Перейти в чат
+</button>
+                           
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-list-check"></i> Управление заказами
+                            </h5>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline-secondary active">Все</button>
+                                <button class="btn btn-sm btn-outline-secondary">Ожидают</button>
+                                <button class="btn btn-sm btn-outline-secondary">В пути</button>
+                            </div>
+                        </div>
+                        
+                        <div class="orders-container">
+                            {% for order in orders %}
+                            <div class="order-card card mb-3 order-{{ order.status.replace(' ', '-') }}" data-order-id="{{ order.id }}">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between">
+                                        <h5 class="card-title">Заказ #{{ order.id }}</h5>
+                                        <span class="badge bg-{{ 'warning' if order.status == 'pending' else 'primary' if order.status == 'in_progress' else 'success' if order.status == 'completed' else 'danger' }}">
+                                            {% if order.status == 'pending' %}Ожидает
+                                            {% elif order.status == 'in_progress' %}В пути
+                                            {% elif order.status == 'completed' %}Выполнено
+                                            {% elif order.status == 'cancelled' %}Отменено
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <p class="card-text">
+                                        <strong>Клиент:</strong> {{ order.full_name }}<br>
+                                        <strong>Груз:</strong> {{ order.cargo_type }} ({{ order.weight }} кг)<br>
+                                        <strong>Маршрут:</strong> {{ order.from_location }} → {{ order.to_location }}<br>
+                                        <strong>Создан:</strong> {{ order.created_at }}
+                                    </p>
+                                    
+                                    <div class="order-actions d-flex flex-wrap">
+                                        {% if order.status == 'pending' %}
+                                            <button class="btn btn-sm btn-primary action-btn accept-order" data-order-id="{{ order.id }}">
+                                                <i class="bi bi-check-circle"></i> Принять
+                                            </button>
+                                        {% elif order.status == 'in_progress' %}
+                                            <button class="btn btn-sm btn-success action-btn complete-order" data-order-id="{{ order.id }}">
+                                                <i class="bi bi-check2-all"></i> Выполнено
+                                            </button>
+                                            <button class="btn btn-sm btn-danger action-btn cancel-order" data-order-id="{{ order.id }}">
+                                                <i class="bi bi-x-circle"></i> Отменить
+                                            </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-secondary action-btn details-order" data-order-id="{{ order.id }}">
+                                            <i class="bi bi-info-circle"></i> Подробнее
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <i class="bi bi-people-fill"></i> Пользователи онлайн
+                        </h5>
+                        <div class="table-responsive">
+                            <table class="table table-hover user-table">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Имя</th>
+                                        <th>Статус</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                    <tr>
+                                        <td>{{ user.id }}</td>
+                                        <td>{{ user.full_name }}</td>
+                                        <td>
+                                            <span class="online-badge {{ 'online' if user.is_online else 'offline' }}"></span>
+                                            {{ 'Онлайн' if user.is_online else 'Офлайн' }}
+                                            <div class="last-activity">
+                                                {{ user.last_activity }}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Flash сообщения -->
+    <div id="flashContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Функция для отображения flash-сообщений
+            function showFlashMessage(type, message) {
+                const flashContainer = document.getElementById('flashContainer');
+                const flashDiv = document.createElement('div');
+                flashDiv.className = `alert alert-${type} flash-message`;
+                flashDiv.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>${message}</span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+                flashContainer.appendChild(flashDiv);
+                
+                // Автоматическое скрытие через 5 секунд
+                setTimeout(() => {
+                    flashDiv.classList.add('fade');
+                    setTimeout(() => flashDiv.remove(), 300);
+                }, 5000);
+            }
+            
+            // Функция для обновления статуса заказа
+            function updateOrderStatus(orderId, newStatus) {
+                fetch('{{ url_for("update_order_status") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        order_id: orderId,
+                        new_status: newStatus
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateOrderUI(orderId, data.order.status, data.status_text);
+                        showFlashMessage('success', `Статус заказа #${orderId} изменен на "${data.status_text}"`);
+                    } else {
+                        showFlashMessage('danger', data.message || 'Ошибка при обновлении статуса');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showFlashMessage('danger', 'Произошла ошибка при обновлении статуса');
+                });
+            }
+            
+            // Функция для обновления интерфейса заказа
+            function updateOrderUI(orderId, newStatus, statusText) {
+                const orderCard = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+                if (!orderCard) return;
+                
+                // Обновляем классы карточки
+                orderCard.className = `order-card card mb-3 order-${newStatus.replace(' ', '-')}`;
+                
+                // Обновляем бейдж статуса
+                const statusBadge = orderCard.querySelector('.badge');
+                statusBadge.className = `badge bg-${getStatusClass(newStatus)}`;
+                statusBadge.textContent = statusText;
+                
+                // Обновляем кнопки действий
+                const actionsContainer = orderCard.querySelector('.order-actions');
+                actionsContainer.innerHTML = getActionButtons(orderId, newStatus);
+                
+                // Назначаем обработчики на новые кнопки
+                assignButtonHandlers(orderId);
+            }
+            
+            // Получаем класс CSS для статуса
+            function getStatusClass(status) {
+                const statusClasses = {
+                    'pending': 'warning',
+                    'in_progress': 'primary',
+                    'completed': 'success',
+                    'cancelled': 'danger'
+                };
+                return statusClasses[status] || 'secondary';
+            }
+            
+            // Генерируем кнопки действий для статуса
+            function getActionButtons(orderId, status) {
+                let buttons = '';
+                
+                if (status === 'pending') {
+                    buttons = `
+                        <button class="btn btn-sm btn-primary action-btn accept-order" data-order-id="${orderId}">
+                            <i class="bi bi-check-circle"></i> Принять
+                        </button>
+                    `;
+                } else if (status === 'in_progress') {
+                    buttons = `
+                        <button class="btn btn-sm btn-success action-btn complete-order" data-order-id="${orderId}">
+                            <i class="bi bi-check2-all"></i> Выполнено
+                        </button>
+                        <button class="btn btn-sm btn-danger action-btn cancel-order" data-order-id="${orderId}">
+                            <i class="bi bi-x-circle"></i> Отменить
+                        </button>
+                    `;
+                }
+                
+                buttons += `
+                    <button class="btn btn-sm btn-outline-secondary action-btn details-order" data-order-id="${orderId}">
+                        <i class="bi bi-info-circle"></i> Подробнее
+                    </button>
+                `;
+                
+                return buttons;
+            }
+            
+            // Назначаем обработчики на кнопки
+            function assignButtonHandlers(orderId) {
+                document.querySelectorAll(`.accept-order[data-order-id="${orderId}"]`).forEach(btn => {
+                    btn.addEventListener('click', () => updateOrderStatus(orderId, 'in_progress'));
+                });
+                
+                document.querySelectorAll(`.complete-order[data-order-id="${orderId}"]`).forEach(btn => {
+                    btn.addEventListener('click', () => updateOrderStatus(orderId, 'completed'));
+                });
+                
+                document.querySelectorAll(`.cancel-order[data-order-id="${orderId}"]`).forEach(btn => {
+                    btn.addEventListener('click', () => updateOrderStatus(orderId, 'cancelled'));
+                });
+            }
+            
+            // Инициализация обработчиков кнопок
+            document.querySelectorAll('.order-card').forEach(card => {
+                const orderId = card.dataset.orderId;
+                assignButtonHandlers(orderId);
+            });
+            
+            // Кнопка обновления
+            document.getElementById('refreshBtn').addEventListener('click', refreshData);
+            
+            // Функция обновления данных
+            function refreshData() {
+                fetch(window.location.href)
+                    .then(response => response.text())
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const newDoc = parser.parseFromString(html, 'text/html');
+                        
+                        // Обновляем контейнер заказов
+                        const newOrdersContainer = newDoc.querySelector('.orders-container');
+                        if (newOrdersContainer) {
+                            document.querySelector('.orders-container').innerHTML = newOrdersContainer.innerHTML;
+                            
+                            // Переназначаем обработчики
+                            document.querySelectorAll('.order-card').forEach(card => {
+                                const orderId = card.dataset.orderId;
+                                assignButtonHandlers(orderId);
+                            });
+                        }
+                        
+                        // Обновляем таблицу пользователей
+                        const newUserTable = newDoc.querySelector('.user-table');
+                        if (newUserTable) {
+                            document.querySelector('.user-table').innerHTML = newUserTable.innerHTML;
+                        }
+                        
+                        showFlashMessage('info', 'Данные успешно обновлены');
+                    })
+                    .catch(error => {
+                        console.error('Ошибка обновления:', error);
+                        showFlashMessage('danger', 'Ошибка при обновлении данных');
+                    });
+            }
+            
+            // Автоматическое обновление каждые 30 секунд
+            setInterval(refreshData, 30000);
+            
+            // Обработчик для кнопки "Подробнее"
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.details-order')) {
+                    const orderId = e.target.closest('.details-order').dataset.orderId;
+                    alert(`Подробная информация о заказе #${orderId}`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
