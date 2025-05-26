@@ -6,3 +6,4 @@
 Ссылка на видео работы программы - https://drive.google.com/drive/folders/1rgkr152kL1FJUuuAVfwzv5p3uZegobQq?usp=sharing
 
 
+![image](https://github.com/user-attachments/assets/5e6d9c6f-dc94-4fc4-8d86-9cff3182fc97)
