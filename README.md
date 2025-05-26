@@ -3,10 +3,6 @@
 
 
 
-Видео работы клиента: 
-файл-клиент.mp4
-Видео работы администратора:
-файл-админ.mp4.mp4
-
+Ссылка на видео работы программы - https://drive.google.com/drive/folders/1rgkr152kL1FJUuuAVfwzv5p3uZegobQq?usp=sharing
 
 
